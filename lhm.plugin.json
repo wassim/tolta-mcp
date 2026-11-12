@@ -1,0 +1,981 @@
+{
+  "author": "Tolta (https://tolta.ai)",
+  "category": "productivity",
+  "cloudEndpoint": "https://tolta.ai/mcp",
+  "description": "Tolta's MCP server: find jobs that fit you, apply to your matches and follow your applications from ChatGPT, Claude and other AI assistants. Remote, OAuth sign-in, no API key.",
+  "homepage": "https://tolta.ai/ai-assistants",
+  "icon": "https://raw.githubusercontent.com/wassim/tolta-mcp/main/assets/icon.png",
+  "identifier": "wassim-tolta-mcp",
+  "name": "Tolta",
+  "prompts": [],
+  "resources": [],
+  "tags": [
+    "mcp",
+    "jobs",
+    "job-search",
+    "job-applications",
+    "auto-apply",
+    "career",
+    "tolta"
+  ],
+  "tools": [
+    {
+      "name": "todays_matches",
+      "title": "Today's job matches",
+      "description": "Today's job matches for the member, best first: the same matches the Tolta dashboard shows today. Each has a match_id, the job, a fit score out of 100 and the reasons for it.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "outputSchema": {
+        "properties": {
+          "matches": {
+            "description": "Best first; empty when there are no new matches today.",
+            "items": {
+              "properties": {
+                "match_id": {
+                  "description": "The match's id, for apply_to_match.",
+                  "type": "string"
+                },
+                "job_id": {
+                  "description": "The job's id, for get_job.",
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "company": {
+                  "type": "string"
+                },
+                "location": {
+                  "description": "Where the role is based, as the posting says.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "remote": {
+                  "description": "How remote the role is, when the posting says.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "seniority": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "salary": {
+                  "description": "Null when the posting gives no salary.",
+                  "properties": {
+                    "min": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "max": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "currency": {
+                      "description": "ISO 4217 code.",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "period": {
+                      "description": "What the amounts are paid per, such as year or hour.",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "required": [
+                    "min",
+                    "max",
+                    "currency",
+                    "period"
+                  ]
+                },
+                "posted_on": {
+                  "description": "ISO date.",
+                  "type": "string"
+                },
+                "fit_score": {
+                  "description": "How well the job fits the member, out of 100.",
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "fit_reasons": {
+                  "items": {
+                    "properties": {
+                      "text": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "positive": {
+                        "description": "False for a reason the job fits less well.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object",
+                    "required": [
+                      "text",
+                      "positive"
+                    ]
+                  },
+                  "type": "array"
+                },
+                "open_in_tolta": {
+                  "description": "The job's page in Tolta, the only link to give the member.",
+                  "type": "string"
+                }
+              },
+              "type": "object",
+              "required": [
+                "match_id",
+                "job_id",
+                "title",
+                "company",
+                "location",
+                "remote",
+                "seniority",
+                "salary",
+                "posted_on",
+                "fit_score",
+                "fit_reasons",
+                "open_in_tolta"
+              ]
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "matches"
+        ]
+      }
+    },
+    {
+      "name": "search_jobs",
+      "title": "Search open jobs",
+      "description": "Searches the open jobs on Tolta, 20 a page, in the member's country or open to anywhere; set other_countries to include roles tied to other countries. Without a query, jobs are ranked by how close they are to the member's profile. Sorted by relevance, a query is matched by keywords and by meaning, so plain sentences work, results may not contain every word, and total is null because every job gets ranked. Sorted by newest, a query needs every word. One search reaches its top 500 results; add a keyword or a filter to see others.",
+      "inputSchema": {
+        "properties": {
+          "query": {
+            "description": "Keywords such as a job title, skill or company name.",
+            "type": "string"
+          },
+          "remote": {
+            "description": "Only jobs with one of these remote arrangements.",
+            "items": {
+              "enum": [
+                "remote",
+                "hybrid",
+                "onsite"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "seniority": {
+            "description": "Only jobs at one of these levels.",
+            "items": {
+              "enum": [
+                "intern",
+                "junior",
+                "mid",
+                "senior",
+                "lead",
+                "principal",
+                "executive"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "job_family": {
+            "description": "Only jobs in one of these fields of work.",
+            "items": {
+              "enum": [
+                "engineering",
+                "data_ai",
+                "product",
+                "design",
+                "it_support",
+                "security",
+                "sales",
+                "marketing",
+                "customer",
+                "operations",
+                "finance",
+                "legal",
+                "people",
+                "healthcare",
+                "culinary_hospitality",
+                "retail",
+                "fitness_wellness",
+                "education",
+                "supply_chain",
+                "manufacturing_trades",
+                "facilities",
+                "administrative",
+                "research_science",
+                "consulting",
+                "executive"
+              ],
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "salary_min": {
+            "description": "Minimum yearly salary.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "posted_within_days": {
+            "description": "Only jobs posted in the last day, week or month.",
+            "enum": [
+              1,
+              7,
+              30
+            ],
+            "type": "integer"
+          },
+          "other_countries": {
+            "description": "Include roles tied to other countries, for a member looking abroad.",
+            "type": "boolean"
+          },
+          "sort": {
+            "description": "relevance by default.",
+            "enum": [
+              "relevance",
+              "newest"
+            ],
+            "type": "string"
+          },
+          "page": {
+            "description": "The page of results, from 1.",
+            "minimum": 1,
+            "maximum": 25,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "outputSchema": {
+        "properties": {
+          "total": {
+            "description": "How many jobs match; null when sorted by relevance with a query.",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "page": {
+            "type": "integer"
+          },
+          "has_more": {
+            "description": "True when the next page has more jobs.",
+            "type": "boolean"
+          },
+          "jobs": {
+            "items": {
+              "properties": {
+                "job_id": {
+                  "description": "The job's id, for get_job.",
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "company": {
+                  "type": "string"
+                },
+                "location": {
+                  "description": "Where the role is based, as the posting says.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "remote": {
+                  "description": "How remote the role is, when the posting says.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "seniority": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "salary": {
+                  "description": "Null when the posting gives no salary.",
+                  "properties": {
+                    "min": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "max": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "currency": {
+                      "description": "ISO 4217 code.",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "period": {
+                      "description": "What the amounts are paid per, such as year or hour.",
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "required": [
+                    "min",
+                    "max",
+                    "currency",
+                    "period"
+                  ]
+                },
+                "posted_on": {
+                  "description": "ISO date.",
+                  "type": "string"
+                },
+                "fit_score": {
+                  "description": "How well the job fits the member, out of 100.",
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "fit_reasons": {
+                  "items": {
+                    "properties": {
+                      "text": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "positive": {
+                        "description": "False for a reason the job fits less well.",
+                        "type": "boolean"
+                      }
+                    },
+                    "type": "object",
+                    "required": [
+                      "text",
+                      "positive"
+                    ]
+                  },
+                  "type": "array"
+                },
+                "open_in_tolta": {
+                  "description": "The job's page in Tolta, the only link to give the member.",
+                  "type": "string"
+                }
+              },
+              "type": "object",
+              "required": [
+                "job_id",
+                "title",
+                "company",
+                "location",
+                "remote",
+                "seniority",
+                "salary",
+                "posted_on",
+                "fit_score",
+                "fit_reasons",
+                "open_in_tolta"
+              ]
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total",
+          "page",
+          "has_more",
+          "jobs"
+        ]
+      }
+    },
+    {
+      "name": "get_job",
+      "title": "Get a job's details",
+      "description": "One open job's details: the role, salary, requirements, responsibilities and benefits as written in the posting, and the member's fit score. Links in the posting are removed; open_in_tolta opens the job in Tolta.",
+      "inputSchema": {
+        "properties": {
+          "job_id": {
+            "description": "A job_id from todays_matches or search_jobs.",
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "outputSchema": {
+        "properties": {
+          "job_id": {
+            "description": "The job's id, for get_job.",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "location": {
+            "description": "Where the role is based, as the posting says.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "remote": {
+            "description": "How remote the role is, when the posting says.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "seniority": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "salary": {
+            "description": "Null when the posting gives no salary.",
+            "properties": {
+              "min": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "max": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "currency": {
+                "description": "ISO 4217 code.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "period": {
+                "description": "What the amounts are paid per, such as year or hour.",
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "type": [
+              "object",
+              "null"
+            ],
+            "required": [
+              "min",
+              "max",
+              "currency",
+              "period"
+            ]
+          },
+          "posted_on": {
+            "description": "ISO date.",
+            "type": "string"
+          },
+          "fit_score": {
+            "description": "How well the job fits the member, out of 100.",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "fit_reasons": {
+            "items": {
+              "properties": {
+                "text": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "positive": {
+                  "description": "False for a reason the job fits less well.",
+                  "type": "boolean"
+                }
+              },
+              "type": "object",
+              "required": [
+                "text",
+                "positive"
+              ]
+            },
+            "type": "array"
+          },
+          "open_in_tolta": {
+            "description": "The job's page in Tolta, the only link to give the member.",
+            "type": "string"
+          },
+          "department": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "employment_type": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "years_experience_min": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "summary": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "responsibilities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "requirements": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "nice_to_have": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "qualities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "work_arrangement": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "compensation": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "benefits": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "hiring_process": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "about_company": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "description": {
+            "description": "The posting's plain text, only while it has no summary and lists yet.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "title",
+          "company",
+          "location",
+          "remote",
+          "seniority",
+          "salary",
+          "posted_on",
+          "fit_score",
+          "fit_reasons",
+          "open_in_tolta",
+          "department",
+          "employment_type",
+          "years_experience_min",
+          "summary",
+          "responsibilities",
+          "requirements",
+          "nice_to_have",
+          "qualities",
+          "work_arrangement",
+          "compensation",
+          "benefits",
+          "hiring_process",
+          "about_company",
+          "description"
+        ]
+      }
+    },
+    {
+      "name": "list_applications",
+      "title": "List applications",
+      "description": "The member's applications, most recently updated first, with their status and whether one is waiting on the member.",
+      "inputSchema": {
+        "properties": {
+          "limit": {
+            "description": "How many to list, 20 by default.",
+            "minimum": 1,
+            "maximum": 50,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "outputSchema": {
+        "properties": {
+          "applications": {
+            "description": "Most recently updated first.",
+            "items": {
+              "properties": {
+                "application_id": {
+                  "description": "The application's id, for get_application.",
+                  "type": "string"
+                },
+                "job_id": {
+                  "description": "The job's id, for get_job.",
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "company": {
+                  "type": "string"
+                },
+                "status": {
+                  "enum": [
+                    "drafting",
+                    "needs_you",
+                    "submitting",
+                    "failed",
+                    "applied",
+                    "screening",
+                    "interviewing",
+                    "offer",
+                    "rejected",
+                    "withdrawn",
+                    "no_response",
+                    "accepted"
+                  ],
+                  "type": "string"
+                },
+                "waiting_on_you": {
+                  "description": "True while a question waits for the member's answer in Tolta.",
+                  "type": "boolean"
+                },
+                "updated_at": {
+                  "description": "ISO 8601.",
+                  "type": "string"
+                },
+                "open_in_tolta": {
+                  "description": "The application's page in Tolta, the only link to give the member.",
+                  "type": "string"
+                }
+              },
+              "type": "object",
+              "required": [
+                "application_id",
+                "job_id",
+                "title",
+                "company",
+                "status",
+                "waiting_on_you",
+                "updated_at",
+                "open_in_tolta"
+              ]
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "applications"
+        ]
+      }
+    },
+    {
+      "name": "get_application",
+      "title": "Get an application",
+      "description": "One of the member's applications: its status and the questions waiting for the member's answer. Questions are answered in Tolta, through open_in_tolta, never in the chat.",
+      "inputSchema": {
+        "properties": {
+          "application_id": {
+            "description": "An application_id from list_applications.",
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "application_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": false
+      },
+      "outputSchema": {
+        "properties": {
+          "application_id": {
+            "description": "The application's id, for get_application.",
+            "type": "string"
+          },
+          "job_id": {
+            "description": "The job's id, for get_job.",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "drafting",
+              "needs_you",
+              "submitting",
+              "failed",
+              "applied",
+              "screening",
+              "interviewing",
+              "offer",
+              "rejected",
+              "withdrawn",
+              "no_response",
+              "accepted"
+            ],
+            "type": "string"
+          },
+          "waiting_on_you": {
+            "description": "True while a question waits for the member's answer in Tolta.",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "description": "ISO 8601.",
+            "type": "string"
+          },
+          "open_in_tolta": {
+            "description": "The application's page in Tolta, the only link to give the member.",
+            "type": "string"
+          },
+          "started_on": {
+            "description": "ISO date.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "submitted_on": {
+            "description": "ISO date; null until the application is sent.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "questions_waiting": {
+            "description": "The questions the member has to answer in Tolta, by their label.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "application_id",
+          "job_id",
+          "title",
+          "company",
+          "status",
+          "waiting_on_you",
+          "updated_at",
+          "open_in_tolta",
+          "started_on",
+          "submitted_on",
+          "questions_waiting"
+        ]
+      }
+    },
+    {
+      "name": "apply_to_match",
+      "title": "Apply to a match",
+      "description": "Apply to one of today's matches, as the member pressing Apply in Tolta. Only call it when the member asked to apply to that job. A member who reviews applications gets a draft to review and send in Tolta; a member who sends without review has it sent as soon as it is ready. Questions the member's profile cannot answer wait for them in Tolta.",
+      "inputSchema": {
+        "properties": {
+          "match_id": {
+            "description": "A match_id from todays_matches.",
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "match_id"
+        ]
+      },
+      "annotations": {
+        "readOnlyHint": false,
+        "destructiveHint": true,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "outputSchema": {
+        "properties": {
+          "application_id": {
+            "description": "The application's id, for get_application.",
+            "type": "string"
+          },
+          "job_id": {
+            "description": "The job's id, for get_job.",
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "company": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "drafting",
+              "needs_you",
+              "submitting",
+              "failed",
+              "applied",
+              "screening",
+              "interviewing",
+              "offer",
+              "rejected",
+              "withdrawn",
+              "no_response",
+              "accepted"
+            ],
+            "type": "string"
+          },
+          "waiting_on_you": {
+            "description": "True while a question waits for the member's answer in Tolta.",
+            "type": "boolean"
+          },
+          "updated_at": {
+            "description": "ISO 8601.",
+            "type": "string"
+          },
+          "open_in_tolta": {
+            "description": "The application's page in Tolta, the only link to give the member.",
+            "type": "string"
+          },
+          "next": {
+            "description": "What happens to the application now, to tell the member.",
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "application_id",
+          "job_id",
+          "title",
+          "company",
+          "status",
+          "waiting_on_you",
+          "updated_at",
+          "open_in_tolta",
+          "next"
+        ]
+      }
+    }
+  ],
+  "version": "1.0.0"
+}
