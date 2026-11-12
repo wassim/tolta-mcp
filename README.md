@@ -40,6 +40,10 @@ Settings → Connectors → Add custom connector. Name it Tolta, paste `https://
 
 Turn on developer mode in Settings, add a connector named Tolta with `https://tolta.ai/mcp`, then sign in to Tolta and approve ChatGPT.
 
+### Cursor
+
+Settings → MCP → Add a remote server with `https://tolta.ai/mcp`, then sign in to Tolta and approve Cursor. The Cursor plugin in `.cursor-plugin/` uses the same server.
+
 ### OpenClaw
 
 ```bash

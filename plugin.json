@@ -1,0 +1,22 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "tolta",
+  "version": "1.0.0",
+  "description": "Find jobs that fit you, apply to your matches and follow your applications with Tolta. Connects to Tolta's remote MCP server; sign in with your Tolta account, no API key needed.",
+  "author": {
+    "name": "Tolta",
+    "email": "support@tolta.ai",
+    "url": "https://tolta.ai"
+  },
+  "homepage": "https://tolta.ai/ai-assistants",
+  "repository": "https://github.com/wassim/tolta-mcp",
+  "license": "MIT",
+  "keywords": [
+    "job search",
+    "job applications",
+    "auto apply",
+    "job matches",
+    "career",
+    "ats"
+  ]
+}
